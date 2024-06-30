@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"context"
+	_ "embed"
 	"fmt"
 	"log"
 	"os"
@@ -23,6 +24,9 @@ type Job struct {
 }
 
 var client *mongo.Client
+
+//go:embed ascii.txt
+var ascii string
 
 func dotenv(key string) string {
 	err := godotenv.Load(".env")
@@ -54,13 +58,14 @@ func clearScreen() {
 }
 
 func mainScreen() {
-	filename := "ascii.txt"
+	/*filename := "ascii.txt"
 
 	content, err := os.ReadFile(filename)
 	if err != nil {
 		log.Fatalf("Failed to read file: %v", err)
 	}
-	fmt.Println(string(content))
+	fmt.Println(string(content))*/
+	fmt.Println(ascii)
 }
 
 func InsertJob(CompanyName string, Rating string, Notes string, OfferLink string, ReviewLink string, HasAnswered bool) {
