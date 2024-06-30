@@ -29,9 +29,9 @@ Since i haven't implemented any commands to help you use this app (I am planning
 - `jm -u`: Using this command, you will need to provide the name of the company you want to update. What it will, is update the "Has Answered" field to `true`
 
 ## What's planned for the next version
-- Update more offer fields
-- Help command
-- Delete an offer
+- [Update multiple fields from the job offer](https://github.com/Xyrsto/job_manager/issues/1)
+- [Create `jm --help` command](https://github.com/Xyrsto/job_manager/issues/2)
+- [Create `jm -d` to delete an offer](https://github.com/Xyrsto/job_manager/issues/3)
 
 
 
