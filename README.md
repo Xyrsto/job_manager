@@ -27,6 +27,7 @@ Since i haven't implemented any commands to help you use this app (I am planning
         - `jm -a -cn Company Name -r 5/5 -n Very cool offer! -ha false`
 - `jm -ls`: This command will list all the job offers you have registered in the database, in a pretty little table.
 - `jm -u`: Using this command, you will need to provide the name of the company you want to update. What it will, is update the "Has Answered" field to `true`
+- `clear`: This will clear the terminal.
 
 ## What's planned for the next version
 - [Update multiple fields from the job offer](https://github.com/Xyrsto/job_manager/issues/1)
