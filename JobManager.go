@@ -58,13 +58,6 @@ func clearScreen() {
 }
 
 func mainScreen() {
-	/*filename := "ascii.txt"
-
-	content, err := os.ReadFile(filename)
-	if err != nil {
-		log.Fatalf("Failed to read file: %v", err)
-	}
-	fmt.Println(string(content))*/
 	fmt.Println(ascii)
 }
 
@@ -78,7 +71,6 @@ func InsertJob(CompanyName string, Rating string, Notes string, OfferLink string
 
 func ListJobs() {
 	coll := client.Database("Jobs").Collection("Jobs")
-	// Sort by HasAnswered (true first, false second)
 	opts := options.Find().SetSort(bson.D{{"hasanswered", -1}})
 	cursor, err := coll.Find(context.TODO(), bson.D{}, opts)
 	if err != nil {
