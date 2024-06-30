@@ -30,9 +30,11 @@ Since i haven't implemented any commands to help you use this app (I am planning
 - `clear`: This will clear the terminal.
 
 ## What's planned for the next version
-- [Update multiple fields from the job offer](https://github.com/Xyrsto/job_manager/issues/1)
-- [Create `jm --help` command](https://github.com/Xyrsto/job_manager/issues/2)
-- [Create `jm -d` to delete an offer](https://github.com/Xyrsto/job_manager/issues/3)
+- [ ] [Update multiple fields from the job offer](https://github.com/Xyrsto/job_manager/issues/1)
+- [x] [Create `jm --help` command](https://github.com/Xyrsto/job_manager/issues/2)
+- [ ] [Create `jm -d` to delete an offer](https://github.com/Xyrsto/job_manager/issues/3)
+- [ ] [Create interview date field](https://github.com/Xyrsto/job_manager/issues/4)
+- [ ] [Implement SQLite database](https://github.com/Xyrsto/job_manager/issues/5)
 
 
 
