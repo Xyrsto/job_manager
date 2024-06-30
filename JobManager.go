@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/joho/godotenv"
@@ -27,6 +28,9 @@ var client *mongo.Client
 
 //go:embed ascii.txt
 var ascii string
+
+const YELLOW = "\033[33;1m"
+const RESET = "\033[0m"
 
 func dotenv(key string) string {
 	err := godotenv.Load(".env")
@@ -58,7 +62,7 @@ func clearScreen() {
 }
 
 func mainScreen() {
-	fmt.Println(ascii)
+	fmt.Println(YELLOW + ascii + RESET)
 }
 
 func InsertJob(CompanyName string, Rating string, Notes string, OfferLink string, ReviewLink string, HasAnswered bool) {
@@ -114,13 +118,18 @@ func printJobsTable(jobs []Job) {
 }
 
 func main() {
+	command_prefix := "jm -"
+	RATING_PATTERN := `^(?:[0-4](?:\.\d+)?|5(?:\.0+)?)/5$`
+	NOTES_PATTERN := `^.{1,30}$`
+	rating_pattern_compiled := regexp.MustCompile(RATING_PATTERN)
+	notes_pattern_compiled := regexp.MustCompile(NOTES_PATTERN)
 LOOP:
 	clearScreen()
 	mainScreen()
 
 	reader := bufio.NewReader(os.Stdin)
 	for {
-		fmt.Print("JobManager$> ")
+		fmt.Print(YELLOW + "JobManager$> " + RESET)
 		input, err := reader.ReadString('\n')
 		if err != nil {
 			fmt.Println("Error reading input:", err)
@@ -128,7 +137,7 @@ LOOP:
 		}
 		input = strings.TrimSpace(input)
 
-		if strings.HasPrefix(input, "jm -a") {
+		if strings.HasPrefix(input, command_prefix+"a") {
 			cmdParts := strings.Split(input, "-")
 
 			var companyName, rating, notes, offerLink, reviewLink string
@@ -141,8 +150,16 @@ LOOP:
 					companyName = strings.TrimSpace(strings.TrimPrefix(part, "cn "))
 				case strings.HasPrefix(part, "r "):
 					rating = strings.TrimSpace(strings.TrimPrefix(part, "r "))
+					if !rating_pattern_compiled.MatchString(rating) {
+						fmt.Println("Invalid rating. Please use the format x/5 where x is a number between 0 and 5")
+						goto NO_CONDITION
+					}
 				case strings.HasPrefix(part, "n "):
 					notes = strings.TrimSpace(strings.TrimPrefix(part, "n "))
+					if !notes_pattern_compiled.MatchString(notes) {
+						fmt.Println("Invalid notes. Please use a short description of the company (Max 30 characters)")
+						goto NO_CONDITION
+					}
 				case strings.HasPrefix(part, "ha "):
 					hasAnswered = strings.TrimSpace(strings.TrimPrefix(part, "ha ")) == "true"
 				}
@@ -150,14 +167,14 @@ LOOP:
 
 			InsertJob(companyName, rating, notes, offerLink, reviewLink, hasAnswered)
 			fmt.Println("Inserted job application successfully!")
-		} else if strings.HasPrefix(input, "jm -ls") {
+		} else if strings.HasPrefix(input, command_prefix+"ls") {
 			args := strings.Fields(input)
 			if len(args) != 2 {
 				fmt.Println("Usage: jm -l")
 				continue
 			}
 			ListJobs()
-		} else if strings.HasPrefix(input, "jm -u") {
+		} else if strings.HasPrefix(input, command_prefix+"u") {
 			ListJobs()
 			fmt.Println("Which application would you like to update: ")
 			companyNameToUpdate, _ := reader.ReadString('\n')
@@ -167,10 +184,22 @@ LOOP:
 
 			UpdateJob(companyNameToUpdate)
 			fmt.Println("Updated job application successfully!")
+		} else if strings.HasPrefix(input, command_prefix+"-help") {
+			fmt.Println("-a: Add a new job application")
+			fmt.Println("\t-cn: Company Name")
+			fmt.Println("\t-r: Rating")
+			fmt.Println("\t-n: Notes. Short description of the company")
+			fmt.Println("\t-ha: Has Answered. Boolean value (true|false). Used to track if you have gotten a response from the company.")
+			fmt.Println("Example: jm -a -cn Company Name -r 5/5 -n Great company -ha false")
+			fmt.Println("-ls: List all job applications")
+			fmt.Println("-u: Update a job application")
+			fmt.Println("clear: Clear the screen")
+			fmt.Println("--help: Display this help message")
 		} else if strings.HasPrefix(input, "clear") {
 			goto LOOP
 		} else {
 			fmt.Println("Unknown command. Usage: jm [-a|-ls|-u] [-cn|-r|-n|-ha] [true|false]")
 		}
+	NO_CONDITION:
 	}
 }
