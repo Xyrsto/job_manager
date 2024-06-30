@@ -1,4 +1,4 @@
-# First version is up!
+# Job Manager - First version is up!
 ![imagem](https://github.com/Xyrsto/job_manager/assets/73367973/98d4c4cb-1430-459b-84ed-1449d882d32a)
 ## How to use?
 Since authentication is not implemented, you have to use your own MongoDB database to use this version.
