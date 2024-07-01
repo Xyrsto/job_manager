@@ -123,11 +123,11 @@ func main() {
 	NOTES_PATTERN := `^.{1,30}$`
 	rating_pattern_compiled := regexp.MustCompile(RATING_PATTERN)
 	notes_pattern_compiled := regexp.MustCompile(NOTES_PATTERN)
-LOOP:
 	clearScreen()
 	mainScreen()
 
 	reader := bufio.NewReader(os.Stdin)
+mainLoop:
 	for {
 		fmt.Print(YELLOW + "JobManager$> " + RESET)
 		input, err := reader.ReadString('\n')
@@ -152,13 +152,13 @@ LOOP:
 					rating = strings.TrimSpace(strings.TrimPrefix(part, "r "))
 					if !rating_pattern_compiled.MatchString(rating) {
 						fmt.Println("Invalid rating. Please use the format x/5 where x is a number between 0 and 5")
-						goto NO_CONDITION
+						continue mainLoop
 					}
 				case strings.HasPrefix(part, "n "):
 					notes = strings.TrimSpace(strings.TrimPrefix(part, "n "))
 					if !notes_pattern_compiled.MatchString(notes) {
 						fmt.Println("Invalid notes. Please use a short description of the company (Max 30 characters)")
-						goto NO_CONDITION
+						continue mainLoop
 					}
 				case strings.HasPrefix(part, "ha "):
 					hasAnswered = strings.TrimSpace(strings.TrimPrefix(part, "ha ")) == "true"
@@ -196,10 +196,10 @@ LOOP:
 			fmt.Println("clear: Clear the screen")
 			fmt.Println("--help: Display this help message")
 		} else if strings.HasPrefix(input, "clear") {
-			goto LOOP
+			clearScreen()
+			mainScreen()
 		} else {
 			fmt.Println("Unknown command. Usage: jm [-a|-ls|-u] [-cn|-r|-n|-ha] [true|false]")
 		}
-	NO_CONDITION:
 	}
 }
