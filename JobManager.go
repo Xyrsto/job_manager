@@ -2,19 +2,18 @@ package main
 
 import (
 	"bufio"
-	"context"
+	"database/sql"
 	_ "embed"
 	"fmt"
 	"log"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/joho/godotenv"
 	"github.com/olekukonko/tablewriter"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	_ "modernc.org/sqlite"
 )
 
 type Job struct {
@@ -24,7 +23,15 @@ type Job struct {
 	HasAnswered bool
 }
 
-var client *mongo.Client
+type ListJob struct {
+	ID          int
+	CompanyName string
+	Rating      string
+	Notes       string
+	HasAnswered bool
+}
+
+var db *sql.DB
 
 //go:embed ascii.txt
 var ascii string
@@ -34,27 +41,14 @@ const RESET = "\033[0m"
 
 func dotenv(key string) string {
 	err := godotenv.Load(".env")
-
-	if err != nil {
-		log.Fatalf("Error loading .env file")
-	}
-
+	checkErr(err)
 	return os.Getenv(key)
 }
 
-func init() {
-	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
-	opts := options.Client().ApplyURI(dotenv("MONGO_DB_URI")).SetServerAPIOptions(serverAPI)
-	var err error
-	client, err = mongo.Connect(context.TODO(), opts)
+func checkErr(err error) {
 	if err != nil {
-		log.Fatalf("Failed to connect to MongoDB: %v", err)
+		log.Fatal(err)
 	}
-	err = client.Ping(context.TODO(), nil)
-	if err != nil {
-		log.Fatalf("Failed to ping MongoDB: %v", err)
-	}
-	fmt.Println("Successfully connected to MongoDB")
 }
 
 func clearScreen() {
@@ -65,56 +59,81 @@ func mainScreen() {
 	fmt.Println(YELLOW + ascii + RESET)
 }
 
-func InsertJob(CompanyName string, Rating string, Notes string, OfferLink string, ReviewLink string, HasAnswered bool) {
-	coll := client.Database(dotenv("MONGO_DB_DATABASE")).Collection(dotenv("MONGO_DB_COLLECTION"))
-	docs := []interface{}{
-		Job{CompanyName: CompanyName, Rating: Rating, Notes: Notes, HasAnswered: HasAnswered},
+func InsertJob(db *sql.DB, CompanyName string, Rating string, Notes string, HasAnswered bool) {
+	insertSQL := `INSERT INTO jobs (company_name, rating, notes, has_answered) VALUES (?, ?, ?, ?)`
+	statement, err := db.Prepare(insertSQL)
+	if err != nil {
+		log.Fatal(err)
 	}
-	coll.InsertMany(context.TODO(), docs)
+	defer statement.Close()
+
+	_, err = statement.Exec(CompanyName, Rating, Notes, HasAnswered)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
-func ListJobs() {
-	coll := client.Database("Jobs").Collection("Jobs")
-	opts := options.Find().SetSort(bson.D{{"hasanswered", -1}})
-	cursor, err := coll.Find(context.TODO(), bson.D{}, opts)
-	if err != nil {
-		log.Fatalf("Failed to retrieve jobs: %v", err)
-	}
-	defer cursor.Close(context.TODO())
+func ListJobs(db *sql.DB) {
+	rows, err := db.Query("SELECT id, company_name, rating, notes, has_answered FROM jobs ORDER BY has_answered DESC")
+	checkErr(err)
+	defer rows.Close()
 
-	var jobs []Job
-	if err := cursor.All(context.TODO(), &jobs); err != nil {
-		log.Fatalf("Failed to decode all jobs: %v", err)
+	var jobs []ListJob
+	for rows.Next() {
+		var job ListJob
+		err := rows.Scan(&job.ID, &job.CompanyName, &job.Rating, &job.Notes, &job.HasAnswered)
+		checkErr(err)
+		jobs = append(jobs, job)
 	}
 
+	checkErr(rows.Err())
 	printJobsTable(jobs)
 }
 
-func UpdateJob(companyName string) {
-	coll := client.Database("Jobs").Collection("Jobs")
+func UpdateJob(db *sql.DB, ID string) {
+	updateSQL := `UPDATE jobs SET has_answered = true WHERE ID = ?`
+	statement, err := db.Prepare(updateSQL)
+	checkErr(err)
+	defer statement.Close()
 
-	filter := bson.D{{"companyname", companyName}}
-	update := bson.D{{"$set", bson.D{{"hasanswered", true}}}}
+	id, err := strconv.Atoi(ID)
+	checkErr(err)
+	_, err = statement.Exec(id)
+	checkErr(err)
 
-	_, err := coll.UpdateOne(context.TODO(), filter, update)
-	if err != nil {
-		log.Fatalf("Failed to update job: %v", err)
-	}
 }
 
-func printJobsTable(jobs []Job) {
+func printJobsTable(jobs []ListJob) {
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Company Name", "Rating", "Notes", "Has Answered"})
+	table.SetHeader([]string{"ID", "Company Name", "Rating", "Notes", "Has Answered"})
 
 	for _, job := range jobs {
 		hasAnsweredStr := "false"
 		if job.HasAnswered {
 			hasAnsweredStr = "true"
 		}
-		table.Append([]string{job.CompanyName, job.Rating, job.Notes, hasAnsweredStr})
+		var jobID string = strconv.Itoa(job.ID)
+		table.Append([]string{jobID, job.CompanyName, job.Rating, job.Notes, hasAnsweredStr})
 	}
-
 	table.Render()
+}
+
+func createTable(db *sql.DB) {
+	query := `
+    CREATE TABLE IF NOT EXISTS jobs(
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		company_name TEXT,
+		rating TEXT,
+		notes TEXT,
+		offer_link TEXT,
+		review_link TEXT,
+		has_answered BOOLEAN
+	);`
+
+	_, err := db.Exec(query)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func main() {
@@ -123,6 +142,12 @@ func main() {
 	NOTES_PATTERN := `^.{1,30}$`
 	rating_pattern_compiled := regexp.MustCompile(RATING_PATTERN)
 	notes_pattern_compiled := regexp.MustCompile(NOTES_PATTERN)
+
+	db, err := sql.Open("sqlite", "jobs.db")
+	checkErr(err)
+	defer db.Close()
+
+	createTable(db)
 	clearScreen()
 	mainScreen()
 
@@ -131,16 +156,13 @@ mainLoop:
 	for {
 		fmt.Print(YELLOW + "JobManager$> " + RESET)
 		input, err := reader.ReadString('\n')
-		if err != nil {
-			fmt.Println("Error reading input:", err)
-			continue
-		}
+		checkErr(err)
 		input = strings.TrimSpace(input)
 
 		if strings.HasPrefix(input, command_prefix+"a") {
 			cmdParts := strings.Split(input, "-")
 
-			var companyName, rating, notes, offerLink, reviewLink string
+			var companyName, rating, notes string
 			var hasAnswered bool
 
 			for i := 1; i < len(cmdParts); i++ {
@@ -165,7 +187,7 @@ mainLoop:
 				}
 			}
 
-			InsertJob(companyName, rating, notes, offerLink, reviewLink, hasAnswered)
+			InsertJob(db, companyName, rating, notes, hasAnswered)
 			fmt.Println("Inserted job application successfully!")
 		} else if strings.HasPrefix(input, command_prefix+"ls") {
 			args := strings.Fields(input)
@@ -173,16 +195,16 @@ mainLoop:
 				fmt.Println("Usage: jm -l")
 				continue
 			}
-			ListJobs()
+			ListJobs(db)
 		} else if strings.HasPrefix(input, command_prefix+"u") {
-			ListJobs()
+			ListJobs(db)
 			fmt.Println("Which application would you like to update: ")
-			companyNameToUpdate, _ := reader.ReadString('\n')
-			companyNameToUpdate = strings.TrimSpace(companyNameToUpdate)
+			companyID, _ := reader.ReadString('\n')
+			companyID = strings.TrimSpace(companyID)
 
-			fmt.Println("Updating application:", companyNameToUpdate)
+			fmt.Println("Updating application:", companyID)
 
-			UpdateJob(companyNameToUpdate)
+			UpdateJob(db, companyID)
 			fmt.Println("Updated job application successfully!")
 		} else if strings.HasPrefix(input, command_prefix+"-help") {
 			fmt.Println("-a: Add a new job application")
