@@ -1,20 +1,8 @@
 # Job Manager - First version is up!
 ![imagem](https://github.com/Xyrsto/job_manager/assets/73367973/98d4c4cb-1430-459b-84ed-1449d882d32a)
-## How to use?
-Since authentication is not implemented, you have to use your own MongoDB database to use this version.
-- 1st step: Create a .env file in the folder where you have the JobManager.exe.
-- 2nd step: Setup the MongoDB database:
-    - Start you cluster
-    - Create a user to manage the database.
-    - Then, on the left side click on "Database" and click "Connect" to copy the URI.
-    - Click on "Browse Collections" and the "+ Create Database". Name it whatever you want.
-    - On the database you have created, create a collection. Again, set whatever name you want.
- - 3d step: On the .env file you have created, create 3 environment variables: :
-    - "MONGO_DB_URI": copy and paste your MongoDB URI here.
-    - "MONGO_DB_DATABASE": here you should put the name of the database you have created.
-    - "MONGO_DB_COLLECTION": here you should put the name of the collection you have created.
-Finally, your app should launch without any problems!
-
+## What is this?
+So... I need a way to manager my job applications, and I also wanted to learn Go, so I've decided to build this app!
+Try it out, its very easy to use, just run it and use the commands down below.
 ## What commands are available?
 Since i haven't implemented any commands to help you use this app (I am planning on doing it in the future), here is the list of commands supported by it:
 - `jm -a`: This one is used to create an entry on your job table. 
@@ -34,7 +22,7 @@ Since i haven't implemented any commands to help you use this app (I am planning
 - [x] [Create `jm --help` command](https://github.com/Xyrsto/job_manager/issues/2)
 - [ ] [Create `jm -d` to delete an offer](https://github.com/Xyrsto/job_manager/issues/3)
 - [ ] [Create interview date field](https://github.com/Xyrsto/job_manager/issues/4)
-- [ ] [Implement SQLite database](https://github.com/Xyrsto/job_manager/issues/5)
+- [x] [Implement SQLite database](https://github.com/Xyrsto/job_manager/issues/5)
 
 
 
