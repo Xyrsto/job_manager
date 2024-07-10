@@ -136,6 +136,19 @@ func createTable(db *sql.DB) {
 	}
 }
 
+func printHelpMenu() {
+  fmt.Println("-a: Add a new job application")
+  fmt.Println("\t-cn: Company Name")
+	fmt.Println("\t-r: Rating")
+  fmt.Println("\t-n: Notes. Short description of the company")
+  fmt.Println("\t-ha: Has Answered. Boolean value (true|false). Used to track if you have gotten a response from the company.")
+  fmt.Println("Example: jm -a -cn Company Name -r 5/5 -n Great company -ha false")
+  fmt.Println("-ls: List all job applications")
+  fmt.Println("-u: Update a job application")
+  fmt.Println("clear: Clear the screen")
+  fmt.Println("--help: Display this help message")
+}
+
 func main() {
 	command_prefix := "jm -"
 	RATING_PATTERN := `^(?:[0-4](?:\.\d+)?|5(?:\.0+)?)/5$`
@@ -207,16 +220,7 @@ mainLoop:
 			UpdateJob(db, companyID)
 			fmt.Println("Updated job application successfully!")
 		} else if strings.HasPrefix(input, command_prefix+"-help") {
-			fmt.Println("-a: Add a new job application")
-			fmt.Println("\t-cn: Company Name")
-			fmt.Println("\t-r: Rating")
-			fmt.Println("\t-n: Notes. Short description of the company")
-			fmt.Println("\t-ha: Has Answered. Boolean value (true|false). Used to track if you have gotten a response from the company.")
-			fmt.Println("Example: jm -a -cn Company Name -r 5/5 -n Great company -ha false")
-			fmt.Println("-ls: List all job applications")
-			fmt.Println("-u: Update a job application")
-			fmt.Println("clear: Clear the screen")
-			fmt.Println("--help: Display this help message")
+      printHelpMenu()	
 		} else if strings.HasPrefix(input, "clear") {
 			clearScreen()
 			mainScreen()
@@ -225,3 +229,5 @@ mainLoop:
 		}
 	}
 }
+
+
